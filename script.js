@@ -1,11 +1,11 @@
-// Get table body
+// Table reference
 const tbody = document.querySelector("#attendanceTable tbody");
 const addStudentBtn = document.getElementById("addStudentBtn");
 
-// Load students from localStorage
+// Load students from localStorage or empty object
 let students = JSON.parse(localStorage.getItem("students")) || {};
 
-// Function to get current date in dd/mm/yyyy
+// Get current date dd/mm/yyyy
 function getCurrentDate() {
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
@@ -14,12 +14,19 @@ function getCurrentDate() {
     return dd + '/' + mm + '/' + yyyy;
 }
 
-// Function to save to localStorage
+// Save to localStorage
 function saveData() {
     localStorage.setItem("students", JSON.stringify(students));
 }
 
-// Function to create a row for student
+// Calculate attendance % realistically
+function calcPercent(student) {
+    const total = students[student].present + students[student].absent;
+    if (total < 2) return "N/A"; // less than 2 classes → don't show %
+    return ((students[student].present / total) * 100).toFixed(1) + "%";
+}
+
+// Create table row
 function createStudentRow(name) {
     const tr = document.createElement("tr");
     tr.setAttribute("data-student", name);
@@ -32,6 +39,7 @@ function createStudentRow(name) {
         <td><button class="deleteBtn">Delete</button></td>
         <td class="totalPresent">${students[name].present}</td>
         <td class="totalAbsent">${students[name].absent}</td>
+        <td class="attendancePercent">${calcPercent(name)}</td>
     `;
 
     // Event listeners
@@ -46,13 +54,14 @@ function createStudentRow(name) {
     tbody.appendChild(tr);
 }
 
-// Function to update attendance
+// Update attendance
 function updateAttendance(name, type, row) {
     if (type === "present") students[name].present++;
     else if (type === "absent") students[name].absent++;
 
     row.querySelector(".totalPresent").textContent = students[name].present;
     row.querySelector(".totalAbsent").textContent = students[name].absent;
+    row.querySelector(".attendancePercent").textContent = calcPercent(name);
 
     saveData();
 }
@@ -74,9 +83,9 @@ addStudentBtn.addEventListener("click", () => {
     }
 });
 
-// Update date every hour automatically
+// Auto-update date every hour
 setInterval(() => {
     document.querySelectorAll(".dateCell").forEach(cell => {
         cell.textContent = getCurrentDate();
     });
-}, 1000 * 60 * 60); // every hour
+}, 1000 * 60 * 60);
